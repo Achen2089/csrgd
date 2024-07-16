@@ -31,7 +31,7 @@ Based on the following research paper summaries:
 
 In no more than 500 words:
 1. Identify one common theme or potential connection between the papers.
-2. Generate 1 - 3 novel hypothesis that addresses a gap or builds upon the collective findings.
+2. Generate 1 - 3 novel hypothesis that addresses a gap or builds upon the collective findings. It needs to be Novel! Don't just restate the findings.
 3. Propose one experiment to test each of the hypothesises.
 
 Provide your concise analysis:
