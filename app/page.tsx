@@ -1,113 +1,209 @@
-import Image from "next/image";
+// File: app/page.tsx
+'use client';
 
-export default function Home() {
+import React, { useState, ChangeEvent, useRef } from 'react';
+import { AlertCircle, Upload, FileText, X, Brain } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
+
+interface AnalysisResult {
+  summaries: string[];
+  unifiedAnalysis: string;
+}
+
+export default function ResearchPaperAnalyzer() {
+  const [files, setFiles] = useState<File[]>([]);
+  const [results, setResults] = useState<AnalysisResult | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
+  const [scientificProcess, setScientificProcess] = useState<string>('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files) {
+      const newFiles = Array.from(event.target.files);
+      setFiles((prevFiles) => [...prevFiles, ...newFiles]);
+      setScientificProcess(`Files selected: ${newFiles.map(f => f.name).join(', ')}`);
+    }
+  };
+
+  const removeFile = (fileToRemove: File) => {
+    setFiles((prevFiles) => prevFiles.filter(file => file !== fileToRemove));
+    setScientificProcess(`File removed: ${fileToRemove.name}`);
+  };
+
+  const handleUploadClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const generateAnalysis = async () => {
+    setIsLoading(true);
+    setError(null);
+    setScientificProcess('');
+    setResults(null);
+    const formData = new FormData();
+    files.forEach((file) => {
+      formData.append('files', file);
+    });
+
+    setScientificProcess(`Initiating analysis of ${files.length} files...`);
+
+    try {
+      const response = await fetch('/api/process-pdfs', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error(`Server responded with ${response.status}: ${response.statusText}`);
+      }
+
+      const reader = response.body!.getReader();
+      const decoder = new TextDecoder();
+      let accumulatedText = '';
+      let currentSummary = '';
+      const summaries: string[] = [];
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        
+        const chunk = decoder.decode(value);
+        accumulatedText += chunk;
+        setScientificProcess(prev => `${prev}${chunk}`);
+
+        if (chunk.includes('Summary for')) {
+          if (currentSummary) {
+            summaries.push(currentSummary.trim());
+            currentSummary = '';
+          }
+          currentSummary = chunk.split('Summary for')[1];
+        } else if (currentSummary) {
+          currentSummary += chunk;
+        }
+
+        if (chunk.includes('Unified Analysis:')) {
+          if (currentSummary) {
+            summaries.push(currentSummary.trim());
+          }
+          const unifiedAnalysis = accumulatedText.split('Unified Analysis:')[1].trim();
+          setResults({ summaries, unifiedAnalysis });
+        }
+      }
+
+      setScientificProcess(prev => `${prev}\nAnalysis completed successfully.`);
+    } catch (error) {
+      if (error instanceof Error) {
+        console.error('Error:', error);
+        setError(`An error occurred: ${error.message}`);
+        setScientificProcess(prev => `${prev}\nError occurred: ${error.message}`);
+      } else {
+        console.log('An unknown error occurred');
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
-    <main className="flex min-h-screen flex-col items-center justify-between p-24">
-      <div className="z-10 w-full max-w-5xl items-center justify-between font-mono text-sm lg:flex">
-        <p className="fixed left-0 top-0 flex w-full justify-center border-b border-gray-300 bg-gradient-to-b from-zinc-200 pb-6 pt-8 backdrop-blur-2xl dark:border-neutral-800 dark:bg-zinc-800/30 dark:from-inherit lg:static lg:w-auto  lg:rounded-xl lg:border lg:bg-gray-200 lg:p-4 lg:dark:bg-zinc-800/30">
-          Get started by editing&nbsp;
-          <code className="font-mono font-bold">app/page.tsx</code>
-        </p>
-        <div className="fixed bottom-0 left-0 flex h-48 w-full items-end justify-center bg-gradient-to-t from-white via-white dark:from-black dark:via-black lg:static lg:size-auto lg:bg-none">
-          <a
-            className="pointer-events-none flex place-items-center gap-2 p-8 lg:pointer-events-auto lg:p-0"
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            By{" "}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className="dark:invert"
-              width={100}
-              height={24}
-              priority
-            />
-          </a>
+    <div className="container mx-auto p-4">
+      <h1 className="text-3xl font-bold mb-6">Scientific Thinking Model</h1>
+      <div className="mb-6">
+        <input
+          type="file"
+          ref={fileInputRef}
+          onChange={handleFileChange}
+          accept=".pdf"
+          multiple
+          className="hidden"
+        />
+        <Button onClick={handleUploadClick} className="mr-4">
+          <Upload className="mr-2 h-4 w-4" /> Upload PDF(s)
+        </Button>
+        <Button onClick={generateAnalysis} disabled={files.length === 0 || isLoading}>
+          {isLoading ? 'Analyzing...' : 'Generate Scientific Analysis'}
+        </Button>
+        <div className="space-y-2 mt-4">
+          {files.map((file, index) => (
+            <div key={index} className="flex items-center space-x-2 bg-gray-100 p-2 rounded">
+              <FileText className="h-4 w-4" />
+              <span className="flex-grow truncate">{file.name}</span>
+              <Button variant="ghost" size="sm" onClick={() => removeFile(file)}>
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          ))}
         </div>
       </div>
+      
+      {isLoading && (
+        <div className="mt-6 flex items-center justify-center p-4 bg-blue-50 rounded-lg">
+          <Brain className="h-8 w-8 animate-pulse text-blue-500" />
+          <span className="ml-2 text-lg font-semibold">Scientific thinking in progress...</span>
+        </div>
+      )}
 
-      <div className="relative z-[-1] flex place-items-center before:absolute before:h-[300px] before:w-full before:-translate-x-1/2 before:rounded-full before:bg-gradient-radial before:from-white before:to-transparent before:blur-2xl before:content-[''] after:absolute after:-z-20 after:h-[180px] after:w-full after:translate-x-1/3 after:bg-gradient-conic after:from-sky-200 after:via-blue-200 after:blur-2xl after:content-[''] before:dark:bg-gradient-to-br before:dark:from-transparent before:dark:to-blue-700 before:dark:opacity-10 after:dark:from-sky-900 after:dark:via-[#0141ff] after:dark:opacity-40 sm:before:w-[480px] sm:after:w-[240px] before:lg:h-[360px]">
-        <Image
-          className="relative dark:drop-shadow-[0_0_0.3rem_#ffffff70] dark:invert"
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
-        />
-      </div>
+      {error && (
+        <Alert variant="destructive" className="mt-6">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+      {scientificProcess && (
+        <div className="mt-6 space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Scientific Processing</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <pre className="whitespace-pre-wrap overflow-auto max-h-96 text-sm">{scientificProcess}</pre>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
-      <div className="mb-32 grid text-center lg:mb-0 lg:w-full lg:max-w-5xl lg:grid-cols-4 lg:text-left">
-        <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Docs{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-sm opacity-50">
-            Find in-depth information about Next.js features and API.
-          </p>
-        </a>
+      {results && (
+        <div className="mt-6 space-y-6">
+          <Card className="bg-green-50">
+            <CardHeader>
+              <CardTitle className="text-2xl text-green-700">Analysis Results</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Accordion type="single" collapsible className="w-full">
+                {results.summaries.map((summary, index) => (
+                  <AccordionItem value={`summary-${index}`} key={index}>
+                    <AccordionTrigger className="text-lg font-semibold">
+                      Summary for Paper {index + 1}
+                    </AccordionTrigger>
+                    <AccordionContent>
+                      <p className="whitespace-pre-wrap text-green-800">{summary}</p>
+                    </AccordionContent>
+                  </AccordionItem>
+                ))}
+                <AccordionItem value="unified-analysis">
+                  <AccordionTrigger className="text-lg font-semibold">
+                    Unified Analysis
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    <p className="whitespace-pre-wrap text-green-800 font-medium text-lg">{results.unifiedAnalysis}</p>
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Learn{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-sm opacity-50">
-            Learn about Next.js in an interactive course with&nbsp;quizzes!
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Templates{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-sm opacity-50">
-            Explore starter templates for Next.js.
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Deploy{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-balance text-sm opacity-50">
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
-      </div>
-    </main>
+      <Alert className="mt-6">
+        <AlertCircle className="h-4 w-4" />
+        <AlertTitle>Note</AlertTitle>
+        <AlertDescription>
+          This analyzer uses AI to process your PDFs and conducts scientific analyses to generate novel hypotheses and experiments. Results should be reviewed and validated by human experts.
+        </AlertDescription>
+      </Alert>
+    </div>
   );
 }
