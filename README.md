@@ -1,36 +1,47 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# Scientific Thinking Model (STM)
+
+This project is a web app that models novel scientific thinking.
+
+## Demo
+
+Check out the demo video to see the Scientific Thinking Model in action or [live here](https://scientific-thinking-model.vercel.app/):
+
+[![STM Demo](https://cdn.loom.com/sessions/thumbnails/2f6a86c3ffe24904940e79f9c19a7f12-with-play.gif)](https://www.loom.com/share/2f6a86c3ffe24904940e79f9c19a7f12?sid=bbaa02c7-bbbf-4fe2-9c5b-82f6e0ecd836)
+
+## Features
+
+- Users upload pdfs of research papers
+- Research papers are converted to embeddings and stored in temp vector store for Retrievel Augmented Generation
+- LLM is prompted to think scientifically about the research papers and detail its analysis step by step
+- Then it synthesizes the analysis of the papers to create a novel hypotheses and corresponding experiments step by step
+
+## Architecture
+
+![STM Architecture](./public/STM_Architecture.png)
 
 ## Getting Started
 
-First, run the development server:
+To run this project locally, follow these steps:
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+1. Clone the repository
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+3. Start the development server:
+   ```bash
+   npm run dev
+   ```
+4. Open [http://localhost:3000](http://localhost:3000) in your browser
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Issues
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- On the live link you are not able to upload pdf file larger than 5mb
 
-This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
+## Contributing
 
-## Learn More
+Contributions are welcome! Please feel free to submit a Pull Request.
 
-To learn more about Next.js, take a look at the following resources:
+## License
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+This project is open source and available under the [MIT License](LICENSE).
