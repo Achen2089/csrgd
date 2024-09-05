@@ -1,6 +1,6 @@
 # Scientific Thinking Model (STM)
 
-This project is a web app that models novel scientific thinking.
+This project is a tool that models novel scientific thinking.
 
 ## Demo
 
