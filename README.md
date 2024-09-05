@@ -6,7 +6,7 @@ This project is a tool that models novel scientific thinking.
 
 Check out the demo video to see the Scientific Thinking Model in action or [live here](https://scientific-thinking-model.vercel.app/):
 
-https://www.loom.com/share/2f6a86c3ffe24904940e79f9c19a7f12?sid=bbaa02c7-bbbf-4fe2-9c5b-82f6e0ecd836
+[Demo Video] (https://www.loom.com/share/2f6a86c3ffe24904940e79f9c19a7f12?sid=bbaa02c7-bbbf-4fe2-9c5b-82f6e0ecd836)
 
 ## Features
 
